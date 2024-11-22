@@ -1,0 +1,35 @@
+#!/bin/bash
+#SBATCH -J in_flight_test
+#! Account name for group, use SL2 for paying queue:
+#SBATCH -A UKAEA-AP002-GPU
+#! Output filename:
+#! %A means slurm job ID and %a means array index
+#SBATCH --output=slurm-in_flight_%A_%a.out
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --gres=gpu:1
+#SBATCH --cpus-per-task=16
+#SBATCH --time=00:30:00
+#SBATCH --array=1-26:2
+#SBATCH -p ampere
+
+#! Modify the environment seen by the application. For this example we need the default modules.
+. /etc/profile.d/modules.sh                # This line enables the module command
+module purge                               # Removes all modules still loaded
+module load rhel8/default-amp            # REQUIRED - loads the basic environment
+
+#! The variable $SLURM_ARRAY_TASK_ID contains the array index for each job.
+#! In this example, each job will be passed its index, so each output file will contain a different value
+
+#! Command line that we want to run:
+source /home/ir-butt2/rds/rds-ukaea-ap001/ir-butt2/openmc-gpu-work/profiles/ampere-profile-openmc.sh
+jobDir="in_flight_benchmark/${SLURM_ARRAY_TASK_ID}mil"
+mkdir -p $jobDir
+cp *.xml $jobDir
+cd $jobDir
+cat settings.xml
+
+CMD="openmc --event -i $((SLURM_ARRAY_TASK_ID*1000000))"
+echo -e "\nExecuting command:\n==================\n$CMD\n"
+eval $CMD
+

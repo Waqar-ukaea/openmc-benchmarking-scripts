@@ -5,7 +5,50 @@ from matplotlib.ticker import FuncFormatter
 import os
 import pandas as pd
 import sh
+import re
 import sys
+
+def openmc_exe_line(file):
+    try:
+        # Use sh.sed to extract the line after "Executing command:", skipping separator lines
+        result = sh.sed('-ne', '/Executing command:/ {n; :loop; n; /[^=]/p; /[^=]/b; b loop}', file)
+        return result.strip()
+    except Exception as e:
+        print(f"Error: {e}")
+        return None
+
+def get_openmc_flags(command):
+    # Ensure the command starts with "openmc"
+    if not command.startswith("openmc"):
+        return {}  # Return empty dict if the command doesn't start with "openmc"
+
+    # Find everything after "openmc --event"
+    event_index = command.find("openmc --event")
+    if event_index == -1:
+        return {}  # Return empty dict if "openmc --event" is not found
+
+    # Extract everything after "openmc --event"
+    args_part = command[event_index + len("openmc --event"):].strip()
+
+    # Define regex to match flags and their optional values
+    pattern = r"(--\w+(?:-\w+)*|-{1}\w)(?:\s+([^-\s][^\s]*))?"
+    matches = re.findall(pattern, args_part)
+
+    # Process matches into a dictionary
+    parsed_args = {}
+    for flag, value in matches:
+        if value:
+            parsed_args[flag] = value  # Flag has an associated value
+        else:
+            parsed_args[flag] = None  # Flag with no value
+
+    return parsed_args
+
+
+def add_flags_to_openmc_data(flag, flags, run_data):
+    # Ensure the flag exists in flags and add it to run_data
+    run_data[flag] = flags.get(flag, False)  # Default to False if the flag is not found
+
 
 # Format ticks as integers if possible, else float
 def format_ticks_as_numbers(x, _):
@@ -27,6 +70,7 @@ def get_openmc_output_from_slurm(batchDirectory, openmcRunData):
     for file in os.listdir(batchDirectory):
         if file.startswith("slurm"):
             print(f"{file} processing...")
+            flags = get_openmc_flags(openmc_exe_line(file))
 
             numberOfGPUs = safe_sed_extract("-ne", r's/^.*MPI Processes |*//p', file)
             simulationTime = safe_sed_extract("-ne", r's/.*Total time in simulation\s*=\s*\([0-9.e+-]*\) seconds/\1/p', file)
@@ -40,6 +84,17 @@ def get_openmc_output_from_slurm(batchDirectory, openmcRunData):
                 numberOfGPUs, simulationTime, calculationRate,
                 particleMemoryBuffer, totalParticles, particlesInFlight, numberOfBatches
             ]
+    
+    # List of flags to add to openmc data
+    openmcFlagsToCheck = [
+        "--no-sort-surface-crossing",
+        "--no-sort-fissionable-xs",
+        "--no-sort-non-fissionable-xs"
+    ]
+
+    for flag in openmcFlagsToCheck:
+        add_flags_to_openmc_data(flag, flags, openmcRunData)
+
 
 # Reusable dual-axis plot function
 def plot_data(x, y1, y1_label, y2=None, y2_label=None, title="", filename="", 
@@ -134,8 +189,8 @@ def plot_strong_scaling(gpus, title, y1, y1_label, *optional_lines):
 def plot_scaling(plotType, openmcRunData, mi300Data):
     gpus = (1, 2, 3, 4, 5, 6, 7, 8)
 
-    simTime_a100 = openmcRunData["Simulation Time (s)"].values
-    calcRate_a100 = openmcRunData["Calculation Rate (Particles/s)"].values
+    simTime_a100 = openmcRunData["Sim Time (s)"].values
+    calcRate_a100 = openmcRunData["Calc Rate (p/s)"].values
     simTime_mi300 = mi300Data["Simulation_Time(s)"].values
     calcRate_mi300 = mi300Data["Calculation_Rate(particles/sec)"].values
 
@@ -147,8 +202,6 @@ def plot_scaling(plotType, openmcRunData, mi300Data):
     for i in range(0,8):
         speedup_a100.append(simTime_a100[0]/simTime_a100[i])
         speedup_mi300.append(simTime_mi300[0]/simTime_mi300[i])
-    print(simTime_a100)
-    print(simTime_mi300)
 
     # Plot simulation time
     plot_data(
@@ -180,14 +233,14 @@ def plot_scaling(plotType, openmcRunData, mi300Data):
 
 # Plot in-flight particles
 def plot_in_flight(plotType, openmcRunData, gpuName):
-    simTime_a100 = openmcRunData["Simulation Time (s)"].values
-    calcRate_a100 = openmcRunData["Calculation Rate (Particles/s)"].values
-    inFlight_a100 = openmcRunData["Max Particles In Flight"].values/1e6
-    particleMem_a100 = openmcRunData["Particle Memory Buffer (MB)"].values
+    simTime_a100 = openmcRunData["Sim Time (s)"].values
+    calcRate_a100 = openmcRunData["Calc Rate (p/s)"].values
+    inFlight_a100 = openmcRunData["Particles In Flight"].values/1e6
+    particleMem_a100 = openmcRunData["Particle Mem Device (MB)"].values
 
     memoryUsage = [(i / 80e3) * 100 for i in particleMem_a100]
 
-    title = f"Effect of Increasing Number of In-Flight Particles | Simple Tokamak - 1 ${gpuName}"
+    title = f"Increasing Number of In-Flight Particles | Simple Tokamak - 1 {gpuName}"
 
     # Plot simulation time vs in-flight particles
     plot_data(
@@ -216,9 +269,9 @@ mi300DataStrong = pd.read_csv("mi300_strong.csv", sep=r'\s+')
 mi300DataWeak = pd.read_csv("mi300_weak.csv", sep=r'\s+')
 
 openmcRunData = pd.DataFrame(columns=[
-    "Number of GPU Dies", "Simulation Time (s)", "Calculation Rate (Particles/s)",
-    "Particle Memory Buffer (MB)", "Total Particles", "Max Particles In Flight",
-    "Number Of Batches"
+    "GPUs", "Sim Time (s)", "Calc Rate (p/s)",
+    "Particle Mem Device (MB)", "Particles", "Particles In Flight",
+    "Batches"
 ])
 
 workingDir = f"{os.getcwd()}/{workingDir}"
@@ -226,20 +279,24 @@ os.chdir(workingDir)
 get_openmc_output_from_slurm(workingDir, openmcRunData)
 
 print(" \n Printing data that has been scraped from the files in the directory provided. Please ensure these are as expected: \n")
-print(openmcRunData)
+
 
 if openmcRunData.isna().any().any():
     print("Program has failed to acquire some data. Please check dataframe and fix any NaN issues in your data. Exiting...")
     sys.exit()
 
-openmcRunData = openmcRunData.sort_values(by='Number of GPU Dies', ascending=True)
 
-if plotType == "strong":    
+if plotType == "strong":
+    openmcRunData = openmcRunData.sort_values(by='GPUs', ascending=True)
+    print(openmcRunData)
     plot_scaling(plotType, openmcRunData, mi300DataStrong)
 elif plotType == "weak":
+    openmcRunData = openmcRunData.sort_values(by='GPUs', ascending=True)
+    print(openmcRunData)
     plot_scaling(plotType, openmcRunData, mi300DataWeak)
 elif plotType == "flight":
-    openmcRunData = openmcRunData.sort_values(by='Max Particles In Flight', ascending=True)
+    openmcRunData = openmcRunData.sort_values(by='Particles In Flight', ascending=True)
+    print(openmcRunData)
     plot_in_flight(plotType, openmcRunData, "NVIDIA A100")
 else:
     print("Invalid plot type. Choose from <strong>, <weak>, <flight>.")

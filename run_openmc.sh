@@ -45,7 +45,7 @@ echo "MULTI_GPU_SCRIPT=${MULTI_GPU_SCRIPT}"
 
 CMD="${OMPI_STR} ${MULTI_GPU_SCRIPT} openmc ${RUN_STR}"
 # CMD="${OMPI_STR} openmc ${RUN_STR}"
-echo "Executing:"
-echo "${CMD}"
+CMD="openmc --event -i $((SLURM_ARRAY_TASK_ID*1000000))"
+echo -e "\nExecuting command:\n------------------\n$CMD\n" 
 eval $CMD
 

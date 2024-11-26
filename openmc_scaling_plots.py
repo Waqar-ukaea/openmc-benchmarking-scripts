@@ -133,6 +133,7 @@ def plot_data(x, y1, y1_label, y2=None, y2_label=None, title="", filename="",
     fig.suptitle(title, fontsize=14)
     fig.tight_layout(rect=[0, 0, 1, 0.95])
     plt.savefig(filename)
+    print(f"Creating {filename}")
     plt.show()
 
 def plot_strong_scaling(gpus, title, y1, y1_label, *optional_lines):
@@ -233,18 +234,16 @@ def plot_scaling(plotType, openmcRunData, mi300Data):
 
 # Plot in-flight particles
 def plot_in_flight(plotType, openmcRunData, gpuName):
-    simTime_a100 = openmcRunData["Sim Time (s)"].values
-    calcRate_a100 = openmcRunData["Calc Rate (p/s)"].values
-    inFlight_a100 = openmcRunData["Particles In Flight"].values/1e6
-    particleMem_a100 = openmcRunData["Particle Mem Device (MB)"].values
-
-    memoryUsage = [(i / 80e3) * 100 for i in particleMem_a100]
+    simTime = openmcRunData["Sim Time (s)"].values
+    calcRate = openmcRunData["Calc Rate (p/s)"].values
+    inFlight = openmcRunData["Particles In Flight"].values/1e6
+    particleMem = openmcRunData["Particle Mem Device (MB)"].values
 
     title = f"Increasing Number of In-Flight Particles | Simple Tokamak - 1 {gpuName}"
 
     # Plot simulation time vs in-flight particles
     plot_data(
-        inFlight_a100, simTime_a100, "Simulation Time (s)",
+        inFlight, simTime, "Simulation Time (s)",
         title=f"{title} (Simulation Time)",
         filename=f"{plotType}_{gpuName}simulation_time.png",
         x_label="Number of Particles in Flight (Million)",
@@ -253,8 +252,8 @@ def plot_in_flight(plotType, openmcRunData, gpuName):
 
     # Plot calculation rate vs in-flight particles
     plot_data(
-        inFlight_a100, calcRate_a100, "Calculation Rate (Particles/s)",
-        y2=memoryUsage, y2_label="Memory Usage (%)",
+        inFlight, calcRate, "Calculation Rate (Particles/s)",
+        y2=particleMem, y2_label="Particle Memory Buffer transferred to device (MB)",
         title=f"{title} (Calculation Rate)",
         filename=f"{plotType}_{gpuName}_calculation_rate.png",
         x_label="Number of Particles in Flight (Million)",
@@ -297,6 +296,6 @@ elif plotType == "weak":
 elif plotType == "flight":
     openmcRunData = openmcRunData.sort_values(by='Particles In Flight', ascending=True)
     print(openmcRunData)
-    plot_in_flight(plotType, openmcRunData, "NVIDIA A100")
+    plot_in_flight(plotType, openmcRunData, "GH200")
 else:
     print("Invalid plot type. Choose from <strong>, <weak>, <flight>.")

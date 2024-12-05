@@ -22,7 +22,8 @@ module load rhel8/default-amp            # REQUIRED - loads the basic environmen
 #! In this example, each job will be passed its index, so each output file will contain a different value
 
 #! Command line that we want to run:
-source /home/ir-butt2/rds/rds-ukaea-ap001/ir-butt2/openmc-gpu-work/profiles/ampere-profile-openmc.sh
+source ~/setup-env.sh
+source ~/setup-openmc.sh
 jobDir="in_flight_benchmark/${SLURM_ARRAY_TASK_ID}mil"
 mkdir -p $jobDir
 cp *.xml $jobDir

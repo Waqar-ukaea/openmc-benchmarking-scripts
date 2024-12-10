@@ -7,6 +7,7 @@ import pandas as pd
 import sh
 import re
 import sys
+import json
 
 def openmc_exe_line(file):
     try:
@@ -234,16 +235,19 @@ def plot_scaling(plotType, openmcRunData, mi300Data):
 
 # Plot in-flight particles
 def plot_in_flight(plotType, openmcRunData, gpuName):
-    simTime = openmcRunData["Sim Time (s)"].values
-    calcRate = openmcRunData["Calc Rate (p/s)"].values
-    inFlight = openmcRunData["Particles In Flight"].values/1e6
-    particleMem = openmcRunData["Particle Mem Device (MB)"].values
+    simTime_1 = openmcRunData["Sim Time (s)"].values
+    calcRate_1 = openmcRunData["Calc Rate (p/s)"].values
+    inFlight_1 = openmcRunData["Particles In Flight"].values/1e6
+    particleMem_1 = openmcRunData["Particle Mem Device (MB)"].values
+
+    inFlight_2 = 
+    inFlight_2
 
     title = f"Increasing Number of In-Flight Particles | Simple Tokamak - 1 {gpuName}"
 
     # Plot simulation time vs in-flight particles
     plot_data(
-        inFlight, simTime, "Simulation Time (s)",
+        inFlight_1, simTime_1, "Simulation Time (s)",
         title=f"{title} (Simulation Time)",
         filename=f"{plotType}_{gpuName}simulation_time.png",
         x_label="Number of Particles in Flight (Million)",
@@ -252,8 +256,8 @@ def plot_in_flight(plotType, openmcRunData, gpuName):
 
     # Plot calculation rate vs in-flight particles
     plot_data(
-        inFlight, calcRate, "Calculation Rate (Particles/s)",
-        y2=particleMem, y2_label="Particle Memory Buffer transferred to device (MB)",
+        inFlight_1, calcRate_1, "Calculation Rate (Particles/s)",
+        y2=particleMem_1, y2_label="Particle Memory Buffer transferred to device (MB)",
         title=f"{title} (Calculation Rate)",
         filename=f"{plotType}_{gpuName}_calculation_rate.png",
         x_label="Number of Particles in Flight (Million)",
@@ -267,6 +271,11 @@ workingDir = input("Please input directory with slurm output files: ")
 mi300DataStrong = pd.read_csv("mi300_strong.csv", sep=r'\s+')
 mi300DataWeak = pd.read_csv("mi300_weak.csv", sep=r'\s+')
 
+gh200Data = pd.read_csv("gh200.csv", sep=r'\s+')
+
+print("successful")
+sys.exit()
+
 openmcRunData = pd.DataFrame(columns=[
     "GPUs", "Sim Time (s)", "Calc Rate (p/s)",
     "Particle Mem Device (MB)", "Particles", "Particles In Flight",
@@ -278,7 +287,6 @@ os.chdir(workingDir)
 get_openmc_output_from_slurm(workingDir, openmcRunData)
 
 print(" \n Printing data that has been scraped from the files in the directory provided. Please ensure these are as expected: \n")
-
 
 if openmcRunData.isna().any().any():
     print("Program has failed to acquire some data. Please check dataframe and fix any NaN issues in your data. Exiting...")

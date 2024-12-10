@@ -1,8 +1,10 @@
 #!/bin/bash
 
 EXE=$1
-ARGS=$2
+ARGS="${@:2}"
 APP="$EXE $ARGS"
+
+echo "$APP"
 
 # This is the list of GPUs we have
 GPUS=(0 1 2 3)
@@ -28,3 +30,4 @@ lrank=$OMPI_COMM_WORLD_LOCAL_RANK
 export CUDA_VISIBLE_DEVICES=${GPUS[${lrank}]}
 export UCX_NET_DEVICES=${NICS[${lrank}]}
 numactl --physcpubind=${CPUS[${lrank}]} --membind=${MEMS[${lrank}]} $APP
+

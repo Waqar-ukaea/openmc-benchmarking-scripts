@@ -4,7 +4,7 @@ EXE=$1
 ARGS="${@:2}"
 APP="$EXE $ARGS"
 
-echo "$APP"
+echo "Args passed to run-multi-gpu.sh: $APP"
 
 # This is the list of GPUs we have
 GPUS=(0 1 2 3)

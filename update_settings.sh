@@ -1,50 +1,45 @@
 #!/bin/bash
 
-# Define configurations for particles_per_batch and batches indexed by GPU count
+# Define configurations for each node
 declare -A particles_per_batch
 declare -A batches
 
-# Update these values as needed
-particles_per_batch["1"]=120000000
-batches["1"]=60
+particles_per_batch["1node"]=60000000
+batches["1node"]=60
 
-particles_per_batch["2"]=240000000
-batches["2"]=30
+particles_per_batch["2node"]=120000000
+batches["2node"]=30
 
-particles_per_batch["3"]=360000000
-batches["3"]=20
+particles_per_batch["3node"]=180000000
+batches["3node"]=20
 
-particles_per_batch["4"]=480000000
-batches["4"]=15
+particles_per_batch["4node"]=240000000
+batches["4node"]=15
 
-particles_per_batch["5"]=600000000
-batches["5"]=12
+particles_per_batch["5node"]=300000000
+batches["5node"]=12
 
-# Get the base directory (current directory where the script is called from)
-BASE_DIR=$(pwd)
+# Base directory containing the subdirectories
+BASE_DIR=$PWD
 
-# Loop through all subdirectories in the base directory
-for SUBDIR in "$BASE_DIR"/*/; do
+# Loop through each subdirectory
+for node in "${!particles_per_batch[@]}"; do
+  SUBDIR="$BASE_DIR/$node"
+  XML_FILE="$SUBDIR/settings.xml"
+
   # Check if settings.xml exists in the subdirectory
-  XML_FILE="${SUBDIR}settings.xml"
   if [[ -f "$XML_FILE" ]]; then
-    # Extract GPU count from directory name (assume it starts with the GPU count)
-    GPU_COUNT=$(basename "$SUBDIR" | grep -o '^[0-9]*')
-    if [[ -n "$GPU_COUNT" && -n "${particles_per_batch[$GPU_COUNT]}" && -n "${batches[$GPU_COUNT]}" ]]; then
-      echo "Updating $XML_FILE for $GPU_COUNT GPUs..."
+    echo "Updating $XML_FILE..."
 
-      # Use sed to update particles and batches
-      sed -i "s|<particles>.*</particles>|<particles>${particles_per_batch[$GPU_COUNT]}</particles>|" "$XML_FILE"
-      sed -i "s|<batches>.*</batches>|<batches>${batches[$GPU_COUNT]}</batches>|" "$XML_FILE"
+    # Use sed to update particles and batches
+    sed -i "s|<particles>.*</particles>|<particles>${particles_per_batch[$node]}</particles>|" "$XML_FILE"
+    sed -i "s|<batches>.*</batches>|<batches>${batches[$node]}</batches>|" "$XML_FILE"
 
-      echo "$XML_FILE updated successfully."
-    else
-      echo "Warning: No configuration found for $GPU_COUNT GPUs, skipping $XML_FILE..."
-    fi
+    echo "$XML_FILE updated successfully."
   else
-    echo "Warning: No settings.xml found in $SUBDIR, skipping..."
+    echo "Warning: $XML_FILE not found, skipping..."
   fi
 done
 
-echo "All settings.xml files processed."
+echo "All settings.xml files updated."
 

@@ -39,7 +39,7 @@ module load rhel8/default-amp              # REQUIRED - loads the basic environm
 #! Insert additional module load commands after this line if needed:
 
 #! Full path to application executable: 
-application="/home/ir-butt2/rds/rds-ukaea-ap001/ir-butt2/openmc-gpu-work/scaling/run_openmc.sh"
+application="~/openmc-benchmarking-scripts/run_openmc.sh"
 
 #! Run options for the application:
 options="${numtasks} $run_dir" # --nodes ${numnodes} --jobid ${JOBID}"

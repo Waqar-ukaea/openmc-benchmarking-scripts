@@ -5,8 +5,10 @@ module purge
 export OMPI_CC=amdclang
 export OMPI_CXX=amdclang++
 
+SCRIPT_DIR=$PWD
+
 OPENMC_DIR=$WORKSPACE/openmc
-PRESET=llvm_mi210_mpi
+PRESET=llvm_mi300_mpi
 BUILD_DIR=build
 JOBS=16
 INSTALL_DIR=install/openmc/$PRESET
@@ -37,6 +39,8 @@ fi
 
 cd $OPENMC_DIR
 git submodule update --init --recursive
+
+mv $SCRIPT_DIR/CMakePresets.json $OPENMC_DIR
 
 # Configure
 if [ -d $BUILD_DIR ]; then

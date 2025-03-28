@@ -18,7 +18,7 @@ XSEC_DIR=$WORKSPACE/endfb-vii.1-hdf5/
 LIBOMPDIR=/opt/rocm/llvm/lib
 
 if [ -d $XSEC_DIR ]; then
-  echo "Directory $CROSS_SECTIONS_DIR already exists."
+  echo "Cross-Sections data directory $CROSS_SECTIONS_DIR already exists..."
 else
   echo "Downloading endfb-vii.1-hdf5 Cross Section Data..."
   wget -O endfb-vii.1-hdf5.tar.xz https://anl.box.com/shared/static/9igk353zpy8fn9ttvtrqgzvw1vtejoz6.xz
@@ -33,9 +33,8 @@ source $PRE_ENV
 cd $WORKSPACE
 
 if [ -d $OPENMC_DIR ]; then
-  echo "Directory $OPENMC_DIR already exists."
+  echo "OpenMC directory $OPENMC_DIR already exists."
 else 
-  echo "Cloning OpenMC-GPU"...
   git clone https://github.com/exasmr/openmc.git
 fi
 
@@ -68,6 +67,8 @@ make -j$JOBS
 
 # Install
 make install
+
+echo "Check OMP_NUM_THREADS is desired amount the $POST_ENV script"
 
 source $POST_ENV
 

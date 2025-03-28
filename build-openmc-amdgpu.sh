@@ -12,8 +12,8 @@ PRESET=llvm_mi300_mpi
 BUILD_DIR=build
 JOBS=16
 INSTALL_DIR=install/openmc/$PRESET
-PRE_ENV=$WORKSPACE/pre-env.sh
-POST_ENV=$WORKSPACE/post-env.sh
+PRE_ENV=$WORKSPACE/amd-prebuild-env.sh
+POST_ENV=$WORKSPACE/amd-postbuild-env.sh
 XSEC_DIR=$WORKSPACE/endfb-vii.1-hdf5/
 LIBOMPDIR=/opt/rocm/llvm/lib
 

@@ -1,4 +1,4 @@
-export PATH=$PATH:$WORKSPACEopenmc/build/install/openmc/llvm_mi300_mpi/bin
+export PATH=$PATH:$WORKSPACE/openmc/build/install/openmc/llvm_mi300_mpi/bin
 export OPENMC_CROSS_SECTIONS=$WORKSPACE/endfb-vii.1-hdf5/cross_sections.xml
 
 export OMP_TARGET_OFFLOAD=MANDATORY

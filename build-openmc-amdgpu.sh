@@ -30,6 +30,8 @@ fi
 # Source environment setup
 source $PRE_ENV
 
+cd $WORKSPACE
+
 if [ -d $OPENMC_DIR ]; then
   echo "Directory $OPENMC_DIR already exists."
 else 

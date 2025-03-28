@@ -181,3 +181,4 @@ fi
 generate_config_file
 
 echo "Directory structure and configuration setup complete."
+echo "$ROOT_DIR/node_config.sh should be edited and run to reflect the correct problem size before job sumission" 

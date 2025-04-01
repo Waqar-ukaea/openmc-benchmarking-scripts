@@ -41,7 +41,7 @@ fi
 cd $OPENMC_DIR
 git submodule update --init --recursive
 
-mv $SCRIPT_DIR/CMakePresets.json $OPENMC_DIR
+cp $SCRIPT_DIR/CMakePresets.json $OPENMC_DIR
 
 # Configure
 if [ -d $BUILD_DIR ]; then
